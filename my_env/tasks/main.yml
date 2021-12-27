@@ -1,0 +1,116 @@
+---
+- name: Get packages
+  package:
+    state: present
+  loop:
+    - vim
+    - gvim
+    - perl
+    - curl
+    - wget
+  become: True      
+
+
+- name: debug
+  debug:
+    msg: "User {{ lookup('env', 'USER') }}"
+
+
+- name: Add user - same as the user calling the playbook
+  ansible.builtin.user:
+    name: "{{ lookup('env', 'USER') }}"
+    shell: /bin/bash
+
+
+- name: Determine available groups
+  getent:
+    database: group
+
+
+- name: Add additional groups to user
+  ansible.builtin.user:
+    user: "{{ lookup('env', 'USER') }}"
+    groups: "{{item}}"
+    append: True
+  when: item in ansible_facts.getent_group
+  with_items: 
+      - sudo
+      - wheel
+
+
+- name: Copy rc files to home dir
+  ansible.builtin.copy:
+    src: "{{role_path}}/files/{{item}}"
+    dest: "{{ lookup('env', 'HOME') }}/{{item}}"
+    owner: "{{ lookup('env', 'USER') }}"
+    group: "{{ lookup('env', 'USER') }}"
+    mode: '0600'
+  loop:
+    - .vimrc
+    - .bashrc
+    - .bc
+    - .inputrc
+
+
+- name: Copy .bashrc to a sudo file
+  ansible.builtin.copy:
+    src: "{{role_path}}/files/.bashrc"
+    dest: "{{ lookup('env', 'HOME') }}/.bashrc_sudo"
+    owner: "{{ lookup('env', 'USER') }}"
+    group: "{{ lookup('env', 'USER') }}"
+    mode: '0600'
+
+
+- name: Make sure root confirms before deletes
+  blockinfile:
+    path: "{{ lookup('env', 'HOME') }}/.bashrc_sudo"
+    block: |
+      alias rm='rm -i'      
+      alias cp='cp -i'
+      alias mv='mv -i'
+
+
+- name: Change root's terminal color to red
+  ansible.builtin.replace:
+    path: "{{ lookup('env', 'HOME') }}/.bashrc_sudo"
+    regexp: '1;32m'
+    replace: '1;31m'
+
+- name: hot key for next tab
+  shell: "gsettings set org.gnome.Terminal.Legacy.Keybindings:/org/gnome/terminal/legacy/keybindings/ next-tab '<Shift>Right'"
+  become: False
+
+
+- name: hot key for previous tab
+  shell: "gsettings set org.gnome.Terminal.Legacy.Keybindings:/org/gnome/terminal/legacy/keybindings/ prev-tab '<Shift>Left'"
+  become: False
+
+
+- name: Make sure vim-plug is installed
+  shell: "curl -fLo ~/.vim/autoload/plug.vim --create-dirs   https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
+  args:
+    warn: False
+
+
+- name: Load vim plugins
+  shell: "vim +PlugInstall +qall"
+
+
+- name: copy my perl-support changes
+  ansible.builtin.copy:
+    src: "{{role_path}}/files/{{item}}"
+    dest: "{{ lookup('env', 'HOME') }}/.vim/perl-support/templates/{{item}}"
+    owner: "{{ lookup('env', 'USER') }}"
+    group: "{{ lookup('env', 'USER') }}"
+    mode: '0600'
+  loop:
+    - comments.templates
+    - idioms.templates
+
+
+- name: Commented out line for file server
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    state: present
+    line: '#\\192.168.0.xxx\Media /mnt/FREENAS cifs vers=3.0,user,uid=1000,gid=1000,rw,username=username,password=secret 0 0'
+
