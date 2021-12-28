@@ -119,6 +119,7 @@
 
 - name: Load vim plugins
   shell: "vim +PlugInstall +qall"
+  become: False
 
 
 - name: copy my perl-support changes
