@@ -1,19 +1,31 @@
 ---
+- name: Update Package Cache (apt/Ubuntu)
+  apt:
+    update_cache: yes
+  changed_when: false
+  when: ansible_distribution == "Ubuntu"
+
+
+- name: Update Package Cache (dnf/CentOS)
+  dnf:
+    update_cache: yes
+  changed_when: false
+  when: ansible_distribution == "CentOS"
+
+
 - name: Get packages
   package:
-    state: present
+    state: latest
+    name: "{{item}}"
   loop:
     - vim
-    - gvim
+    - vim-gtk3
     - perl
     - curl
     - wget
-  become: True      
-
-
-- name: debug
-  debug:
-    msg: "User {{ lookup('env', 'USER') }}"
+    - rsnapshot
+    - git
+  #become: True      
 
 
 - name: Add user - same as the user calling the playbook
@@ -85,11 +97,24 @@
   shell: "gsettings set org.gnome.Terminal.Legacy.Keybindings:/org/gnome/terminal/legacy/keybindings/ prev-tab '<Shift>Left'"
   become: False
 
+- name: Set screen timeout to 1 hour
+  shell: "gsettings set org.gnome.desktop.session idle-delay 3600"
+  become: False
+
 
 - name: Make sure vim-plug is installed
-  shell: "curl -fLo ~/.vim/autoload/plug.vim --create-dirs   https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
+  shell: "curl -fLo {{ lookup('env', 'HOME') }}/.vim/autoload/plug.vim --create-dirs   https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim"
   args:
     warn: False
+
+
+- name: Set permissions for .vim dir
+  file:
+    dest: "{{ lookup('env', 'HOME') }}/.vim"
+    owner: "{{ lookup('env', 'USER') }}" 
+    group: "{{ lookup('env', 'USER') }}"
+    mode: u=rwX,g=rX,o=rX
+    recurse: yes
 
 
 - name: Load vim plugins
@@ -99,7 +124,7 @@
 - name: copy my perl-support changes
   ansible.builtin.copy:
     src: "{{role_path}}/files/{{item}}"
-    dest: "{{ lookup('env', 'HOME') }}/.vim/perl-support/templates/{{item}}"
+    dest: "{{ lookup('env', 'HOME') }}/.vim/plugged/perl-support/perl-support/templates/{{item}}"
     owner: "{{ lookup('env', 'USER') }}"
     group: "{{ lookup('env', 'USER') }}"
     mode: '0600'
@@ -113,4 +138,27 @@
     path: /etc/fstab
     state: present
     line: '#\\192.168.0.xxx\Media /mnt/FREENAS cifs vers=3.0,user,uid=1000,gid=1000,rw,username=username,password=secret 0 0'
+
+
+- name: Setup rsnapshot alpha
+  ansible.builtin.lineinfile:
+    path: /etc/cron.d/rsnapshot
+    regex: '^\s*#.*alpha'
+    line: '0   */4   * * *         root    /usr/bin/rsnapshot alpha'
+
+
+- name: Setup rsnapshot beta
+  ansible.builtin.lineinfile:
+    path: /etc/cron.d/rsnapshot
+    regex: '^\s*#.*beta'
+    line: '30  3     * * *         root    /usr/bin/rsnapshot beta'
+
+
+- name: Setup rsnapshot gamma
+  ansible.builtin.lineinfile:
+    path: /etc/cron.d/rsnapshot
+    regex: '^\s*#.*gamma'
+    line: '0   3     * * 1         root    /usr/bin/rsnapshot gamma'
+
+
 
