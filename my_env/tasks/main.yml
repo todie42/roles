@@ -50,6 +50,25 @@
       - wheel
 
 
+- name: Create bash profiles dir
+  ansible.builtin.file:
+    path: '~/terminal_profiles/'
+    state: directory
+    mode: '0755'
+
+
+- name: Copy bash profiles to ~/terminal_profiles
+  ansible.builtin.copy:
+    src: "{{role_path}}/files/{{item}}"
+    dest: "{{ lookup('env', 'HOME') }}/terminal_profiles/{{item}}"
+    owner: "{{ lookup('env', 'USER') }}"
+    group: "{{ lookup('env', 'USER') }}"
+    mode: '0770'
+  loop:
+    - work
+    - spotter
+
+
 - name: Copy rc files to home dir
   ansible.builtin.copy:
     src: "{{role_path}}/files/{{item}}"

@@ -55,3 +55,6 @@ alias dnn='popd >/dev/null; popd >/dev/null; cd .'
 alias dnnn='popd >/dev/null; popd >/dev/null; popd >/dev/null; cd .'
 alias dnnnn='popd >/dev/null; popd >/dev/null; popd >/dev/null; popd >/dev/null; cd .'
 
+alias pspot="~/terminal_profiles/spotter &"
+alias pwork="~/terminal_profiles/work &"
+

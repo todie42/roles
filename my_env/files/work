@@ -1,0 +1,18 @@
+#!/bin/bash
+
+mkdir -p ~/terminal_profiles
+perl -pe s'/0;\\w/Terminal/' ~/.bashrc > ~/terminal_profiles/.bashrc.mutable
+mv ~/.bashrc ~/.bashrc.good
+mv ~/terminal_profiles/.bashrc.mutable ~/.bashrc
+. ~/.bashrc
+
+gnome-terminal \
+--window --working-directory=$HOME \
+--tab     --working-directory=$HOME/ansible --profile=Ansible -t ANSIBLE \
+--tab     --working-directory=$HOME/ansible/playbooks --profile=Ansible -t PLAYBOOK \
+--tab     --working-directory=$HOME/ansible/roles --profile=Ansible -t ROLES \
+--tab     --working-directory=$HOME/projects/impact-stack --profile=Ansible -t VAGRANT \
+--tab     --working-directory=$HOME/projects --profile=Ansible -t PROJECTS
+
+mv ~/.bashrc.good ~/.bashrc
+. ~/.bashrc

@@ -1,0 +1,17 @@
+#!/bin/bash
+
+mkdir -p ~/terminal_profiles
+perl -pe s'/0;\\w/Terminal/' ~/.bashrc > ~/terminal_profiles/.bashrc.mutable
+mv ~/.bashrc ~/.bashrc.good
+mv ~/terminal_profiles/.bashrc.mutable ~/.bashrc
+. ~/.bashrc
+
+gnome-terminal \
+--window --working-directory=$HOME \
+--tab     --working-directory=$HOME/projects/spotter/dev/bin --profile=happy_place -t BIN \
+--tab     --working-directory=$HOME/projects/spotter/dev/lib --profile=happy_place -t LIB \
+--tab     --working-directory=$HOME/projects/spotter/dev/images --profile=happy_place -t IMAGES \
+
+
+mv ~/.bashrc.good ~/.bashrc
+. ~/.bashrc
