@@ -52,7 +52,7 @@
 
 - name: Create bash profiles dir
   ansible.builtin.file:
-    path: '~/terminal_profiles/'
+    path: "{{ lookup('env', 'HOME') }}/terminal_profiles"
     state: directory
     mode: '0755'
 
